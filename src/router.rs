@@ -31,7 +31,7 @@ impl StdError for NoRoute {
 
 
 /// Captured value extracted by the router.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Captures(Vec<(Option<String>, String)>);
 
 impl Key for Captures {
@@ -87,7 +87,7 @@ impl Middleware for Router {
     fn call(&self, mut ctx: Context) -> AsyncResult {
         match self.recognize(&ctx.req.method, &ctx.req.path()) {
             Ok((middleware, cap)) => {
-                ctx.ext.insert::<Captures>(cap);
+                ctx.insert_ext(cap);
                 middleware.call(ctx)
             }
             Err(err) => {

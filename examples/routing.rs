@@ -31,11 +31,9 @@ fn index_post(mut ctx: Context) -> AsyncResult {
 }
 
 fn show_captures(mut ctx: Context) -> AsyncResult {
-    {
-        let cap = ctx.ext.get::<Captures>().unwrap();
-        ctx.res.set_status(StatusCode::Ok);
-        ctx.res.set_body(format!("Captures: {:?}", cap));
-    }
+    let cap = ctx.get_ext::<Captures>().unwrap();
+    ctx.res.set_status(StatusCode::Ok);
+    ctx.res.set_body(format!("Captures: {:?}", cap));
     ctx.finish()
 }
 

@@ -42,7 +42,7 @@ impl DBMiddleware {
 
 impl Middleware for DBMiddleware {
     fn call(&self, mut ctx: Context) -> AsyncResult {
-        ctx.ext.insert::<DBPool>(DBPool(self.0.clone()));
+        ctx.insert_ext(DBPool(self.0.clone()));
         ctx.next_middleware()
     }
 }
@@ -102,13 +102,13 @@ impl Person {
 
 
 fn index(mut ctx: Context) -> AsyncResult {
-    {
-        let db = ctx.ext.get::<DBPool>().unwrap();
+    let people = {
+        let db = ctx.get_ext_ref::<DBPool>().unwrap();
         let conn = try_f!(db.get());
-        let people = try_f!(Person::select(&*conn));
-        ctx.res.set_status(StatusCode::Ok);
-        ctx.res.set_body(format!("people: {:?}", people));
-    }
+        try_f!(Person::select(&*conn))
+    };
+    ctx.res.set_status(StatusCode::Ok);
+    ctx.res.set_body(format!("people: {:?}", people));
     ctx.finish()
 }
 

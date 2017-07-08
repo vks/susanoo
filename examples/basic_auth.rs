@@ -45,9 +45,7 @@ impl Key for UserList {
 
 impl Middleware for UserList {
     fn call(&self, mut ctx: Context) -> AsyncResult {
-        ctx.ext.insert::<UserList>(
-            UserList(self.0.clone()),
-        );
+        ctx.insert_ext(UserList(self.0.clone()));
         ctx.next_middleware()
     }
 }
@@ -75,15 +73,14 @@ fn check_auth(mut ctx: Context) -> AsyncResult {
         }
     };
 
-    let found: Option<User> = ctx.ext
-        .get::<UserList>()
+    let found: Option<User> = ctx.get_ext_ref::<UserList>()
         .unwrap()
         .iter()
         .find(|&user| user.verify(username, password))
         .map(|u| u.clone());
     match found {
         Some(user) => {
-            ctx.ext.insert::<User>(user);
+            ctx.insert_ext(user);
         }
         None => {
             ctx.res.set_status(StatusCode::Unauthorized);
@@ -101,14 +98,12 @@ fn check_auth(mut ctx: Context) -> AsyncResult {
 
 
 fn index(mut ctx: Context) -> AsyncResult {
-    {
-        let user = ctx.ext.get::<User>().unwrap();
-        ctx.res.set_status(StatusCode::Ok);
-        ctx.res.set_body(format!(
-            "<h1>Welcome, {}!</h1>",
-            user.username
-        ));
-    }
+    let user = ctx.get_ext::<User>().unwrap();
+    ctx.res.set_status(StatusCode::Ok);
+    ctx.res.set_body(format!(
+        "<h1>Welcome, {}!</h1>",
+        user.username
+    ));
     ctx.finish()
 }
 

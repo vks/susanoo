@@ -1,5 +1,5 @@
 use hyper::{Request as HyperRequest, Response, Method, Uri, HttpVersion, Headers, Body};
-use typemap::SendMap;
+use typemap::{SendMap, Key};
 use futures::{future, Future};
 use result::AsyncResult;
 
@@ -47,8 +47,8 @@ pub enum Status {
 pub struct Context {
     pub req: Request,
     pub res: Response,
-    pub ext: SendMap,
     pub status: Status,
+    ext: SendMap,
 }
 
 impl Context {
@@ -59,6 +59,22 @@ impl Context {
             ext: SendMap::custom(),
             status: Status::Ongoing,
         }
+    }
+
+    pub fn get_ext<T: Key<Value = T> + Send + Clone>(&self) -> Option<T> {
+        self.ext.get::<T>().map(|v| v.clone())
+    }
+
+    pub fn get_ext_ref<T: Key<Value = T> + Send>(&self) -> Option<&T> {
+        self.ext.get::<T>()
+    }
+
+    pub fn get_ext_mut<T: Key<Value = T> + Send>(&mut self) -> Option<&mut T> {
+        self.ext.get_mut::<T>()
+    }
+
+    pub fn insert_ext<T: Key<Value = T> + Send>(&mut self, val: T) -> Option<T> {
+        self.ext.insert::<T>(val)
     }
 
     pub fn next_middleware(mut self) -> AsyncResult {
