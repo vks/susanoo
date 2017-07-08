@@ -1,11 +1,34 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::fmt;
+use std::error::Error as StdError;
 use std::sync::Arc;
 use hyper::{Method, StatusCode};
+use hyper::server::Response;
 use regex::Regex;
 
-use context::Captures;
+use futures::{future, Future};
+use response::{AsyncResult, Failure};
+use context::{Context, Captures};
 use middleware::Middleware;
+
+
+#[derive(Debug)]
+pub struct NoRoute;
+
+impl fmt::Display for NoRoute {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "no route")
+    }
+}
+
+impl StdError for NoRoute {
+    fn description(&self) -> &str {
+        "no route"
+    }
+}
+
+
 
 struct Route {
     pattern: Regex,
@@ -40,19 +63,36 @@ impl Router {
         &self,
         method: &Method,
         path: &str,
-    ) -> Result<(Arc<Middleware>, Captures), StatusCode> {
-        let routes = self.routes.get(method).ok_or(
-            StatusCode::NotFound,
-        )?;
+    ) -> Result<(Arc<Middleware>, Captures), NoRoute> {
+        let routes = self.routes.get(method).ok_or(NoRoute)?;
         for route in routes {
             if let Some(caps) = get_owned_captures(&route.pattern, path) {
                 return Ok((route.middleware.clone(), caps));
             }
         }
-        Err(StatusCode::NotFound)
+        Err(NoRoute)
     }
 }
 
+impl Middleware for Router {
+    fn call(&self, mut ctx: Context) -> AsyncResult {
+        let method = ctx.req.method().clone();
+        let path = ctx.req.path().to_owned();
+        match self.recognize(&method, &path) {
+            Ok((middleware, cap)) => {
+                ctx.cap = Some(cap);
+                middleware.call(ctx)
+            }
+            Err(err) => {
+                future::err(Failure::from(err).with_response(
+                    Response::new().with_status(
+                        StatusCode::NotFound,
+                    ),
+                )).boxed()
+            }
+        }
+    }
+}
 
 
 fn get_owned_captures(re: &Regex, path: &str) -> Option<Vec<(Option<String>, String)>> {

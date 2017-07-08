@@ -24,9 +24,18 @@ pub struct MiddlewareStack {
 }
 
 impl MiddlewareStack {
-    pub fn with<M: Middleware>(mut self, middleware: M) -> Self {
+    pub fn push<M: Middleware>(&mut self, middleware: M) -> &mut Self {
         self.middlewares.push(Arc::new(middleware));
         self
+    }
+
+    pub fn with<M: Middleware>(mut self, middleware: M) -> Self {
+        self.push(middleware);
+        self
+    }
+
+    pub fn iter(&self) -> ::std::slice::Iter<Arc<Middleware>> {
+        self.middlewares.iter()
     }
 }
 

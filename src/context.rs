@@ -11,16 +11,16 @@ pub type Captures = Vec<(Option<String>, String)>;
 /// global/per-request shared variables.
 pub struct Context {
     pub req: Request,
-    pub cap: Captures,
+    pub cap: Option<Captures>,
     pub map: TypeMap<UnsafeAny + Send>,
     pub states: Arc<States>,
 }
 
 impl Context {
-    pub fn new(req: Request, cap: Captures, states: Arc<States>) -> Self {
+    pub fn new(req: Request, states: Arc<States>) -> Self {
         Context {
             req,
-            cap,
+            cap: None,
             map: TypeMap::custom(),
             states,
         }

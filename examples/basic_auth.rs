@@ -122,7 +122,9 @@ fn main() {
     let router = Router::default()
         .with_route(Get, "/", index)
         .with_route(Get, "/public", public);
-    let susanoo = Susanoo::new(router).with_state(UserList(users));
+    let susanoo = Susanoo::new().with(router).with_state(
+        UserList(users),
+    );
 
     let server = susanoo.into_server("0.0.0.0:4000").unwrap();
     server.run().unwrap();

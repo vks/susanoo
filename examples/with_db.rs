@@ -116,7 +116,7 @@ fn main() {
     let db = DBPool(pool);
 
     let router = Router::default().with_route(Get, "/", index);
-    let susanoo = Susanoo::new(router).with_state(db);
+    let susanoo = Susanoo::new().with(router).with_state(db);
 
     let server = susanoo.into_server("0.0.0.0:4000").unwrap();
     server.run().unwrap();
