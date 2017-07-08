@@ -46,7 +46,7 @@ impl Key for UserList {
 
 impl Middleware for UserList {
     fn call(&self, mut ctx: Context) -> AsyncResult {
-        ctx.map.insert::<UserList>(
+        ctx.ext.insert::<UserList>(
             UserList(self.0.clone()),
         );
         future::ok(ctx.into()).boxed()
@@ -57,7 +57,7 @@ impl Middleware for UserList {
 
 fn check_auth(mut ctx: Context) -> AsyncResult {
     {
-        let auth = ctx.req.headers().get::<Authorization<Basic>>();
+        let auth = ctx.req.headers.get::<Authorization<Basic>>();
         let (username, password) = match auth {
             Some(&Authorization(Basic {
                                     ref username,
@@ -73,7 +73,7 @@ fn check_auth(mut ctx: Context) -> AsyncResult {
             }
         };
 
-        let found: Option<User> = ctx.map
+        let found: Option<User> = ctx.ext
             .get::<UserList>()
             .unwrap()
             .iter()
@@ -81,7 +81,7 @@ fn check_auth(mut ctx: Context) -> AsyncResult {
             .map(|u| u.clone());
         match found {
             Some(user) => {
-                ctx.map.insert::<User>(user);
+                ctx.ext.insert::<User>(user);
             }
             None => {
                 return future::ok(
@@ -100,7 +100,7 @@ fn check_auth(mut ctx: Context) -> AsyncResult {
 
 
 fn index(ctx: Context) -> AsyncResult {
-    let user = ctx.map.get::<User>().unwrap();
+    let user = ctx.ext.get::<User>().unwrap();
     future::ok(
         Response::new()
             .with_status(StatusCode::Ok)

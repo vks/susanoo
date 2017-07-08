@@ -42,7 +42,7 @@ impl DBMiddleware {
 
 impl Middleware for DBMiddleware {
     fn call(&self, mut ctx: Context) -> AsyncResult {
-        ctx.map.insert::<DBPool>(DBPool(self.0.clone()));
+        ctx.ext.insert::<DBPool>(DBPool(self.0.clone()));
         future::ok(ctx.into()).boxed()
     }
 }
@@ -102,7 +102,7 @@ impl Person {
 
 
 fn index(ctx: Context) -> AsyncResult {
-    let db = ctx.map.get::<DBPool>().unwrap();
+    let db = ctx.ext.get::<DBPool>().unwrap();
     let conn = try_f!(db.get());
     let people = try_f!(Person::select(&*conn));
     future::ok(

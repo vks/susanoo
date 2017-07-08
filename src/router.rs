@@ -85,11 +85,9 @@ impl Router {
 
 impl Middleware for Router {
     fn call(&self, mut ctx: Context) -> AsyncResult {
-        let method = ctx.req.method().clone();
-        let path = ctx.req.path().to_owned();
-        match self.recognize(&method, &path) {
+        match self.recognize(&ctx.req.method, &ctx.req.path()) {
             Ok((middleware, cap)) => {
-                ctx.map.insert::<Captures>(cap);
+                ctx.ext.insert::<Captures>(cap);
                 middleware.call(ctx)
             }
             Err(err) => {

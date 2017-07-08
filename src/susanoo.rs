@@ -70,7 +70,7 @@ impl Service for SusanooService {
     type Future = BoxFuture<Response, HyperError>;
 
     fn call(&self, req: Request) -> Self::Future {
-        let ctx = future::ok(Context::new(req).into()).boxed();
+        let ctx = future::ok(Context::from_hyper(req).into()).boxed();
 
         // apply middlewares
         let ctx = self.inner.middlewares.iter().fold(ctx, |ctx, m| {

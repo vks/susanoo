@@ -14,10 +14,9 @@ fn index(_ctx: Context) -> AsyncResult {
     ).boxed()
 }
 
-fn index_post(ctx: Context) -> AsyncResult {
-    ctx.req
-        .body()
-        .collect()
+fn index_post(mut ctx: Context) -> AsyncResult {
+    let body = ctx.req.take_body().unwrap();
+    body.collect()
         .and_then(|chunks| {
             let mut body = Vec::new();
             for chunk in chunks {
@@ -35,7 +34,7 @@ fn index_post(ctx: Context) -> AsyncResult {
 }
 
 fn show_captures(ctx: Context) -> AsyncResult {
-    let cap = ctx.map.get::<Captures>().unwrap();
+    let cap = ctx.ext.get::<Captures>().unwrap();
     future::ok(
         Response::new()
             .with_status(StatusCode::Ok)
