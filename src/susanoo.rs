@@ -81,13 +81,7 @@ impl Service for SusanooService {
                         Status::Ongoing => Ok(ctx.res.with_status(StatusCode::NotFound)),
                     }
                 }
-                Err(failure) => Ok(
-                    failure.response.unwrap_or(
-                        Response::new()
-                            .with_status(StatusCode::InternalServerError)
-                            .with_body(format!("Internal Server Error: {:?}", failure.err)),
-                    ),
-                ),
+                Err(failure) => Ok(failure.response),
             })
             .boxed()
     }
