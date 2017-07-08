@@ -2,7 +2,7 @@ extern crate susanoo;
 #[macro_use]
 extern crate hyper;
 
-use susanoo::{Server, Context, Response, AsyncResult};
+use susanoo::{Susanoo, Context, Response, AsyncResult, Router};
 use susanoo::middleware::MiddlewareStack;
 use susanoo::contrib::hyper::{Get, StatusCode};
 use susanoo::contrib::hyper::header::{Authorization, Basic};
@@ -119,9 +119,11 @@ fn main() {
         index,
     );
 
-    let server = Server::new()
+    let router = Router::default()
         .with_route(Get, "/", index)
-        .with_route(Get, "/public", public)
-        .with_state(UserList(users));
-    server.run("0.0.0.0:4000")
+        .with_route(Get, "/public", public);
+    let susanoo = Susanoo::new(router).with_state(UserList(users));
+
+    let server = susanoo.into_server("0.0.0.0:4000").unwrap();
+    server.run().unwrap();
 }

@@ -4,7 +4,7 @@ extern crate r2d2;
 extern crate r2d2_sqlite;
 extern crate rusqlite;
 
-use susanoo::{Context, Server, Response, AsyncResult};
+use susanoo::{Context, Susanoo, Response, AsyncResult, Router};
 use susanoo::contrib::hyper::{Get, StatusCode};
 use susanoo::contrib::futures::{future, Future};
 use susanoo::contrib::typemap::Key;
@@ -115,9 +115,9 @@ fn main() {
     let pool = r2d2::Pool::new(Default::default(), manager).unwrap();
     let db = DBPool(pool);
 
-    let server = Server::new()
-        .with_route(Get, "/", index)
-        .with_state(db);
+    let router = Router::default().with_route(Get, "/", index);
+    let susanoo = Susanoo::new(router).with_state(db);
 
-    server.run("0.0.0.0:4000");
+    let server = susanoo.into_server("0.0.0.0:4000").unwrap();
+    server.run().unwrap();
 }

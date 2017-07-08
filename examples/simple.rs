@@ -1,6 +1,6 @@
 extern crate susanoo;
 
-use susanoo::{Context, Server, Response, AsyncResult};
+use susanoo::{Context, Susanoo, Response, AsyncResult, Router};
 use susanoo::contrib::hyper::{Get, Post, StatusCode};
 use susanoo::contrib::futures::{future, Future, Stream};
 
@@ -44,10 +44,12 @@ fn show_captures(ctx: Context) -> AsyncResult {
 }
 
 fn main() {
-    let server = Server::new()
+    let router = Router::default()
         .with_route(Get, "/", index)
         .with_route(Post, "/", index_post)
         .with_route(Post, "/post", index_post)
         .with_route(Get, r"/echo/([^/]+)/(?P<hoge>[^/]+)/([^/]+)", show_captures);
-    server.run("0.0.0.0:4000");
+    let susanoo = Susanoo::new(router);
+    let server = susanoo.into_server("0.0.0.0:4000").unwrap();
+    server.run().unwrap();
 }

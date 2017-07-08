@@ -19,7 +19,7 @@ pub struct Router {
 }
 
 impl Router {
-    pub fn add_route<S, M>(&mut self, method: Method, pattern: S, middleware: M) -> &mut Self
+    pub fn with_route<S, M>(mut self, method: Method, pattern: S, middleware: M) -> Self
     where
         S: AsRef<str>,
         M: Middleware,
@@ -36,7 +36,7 @@ impl Router {
         self
     }
 
-    pub fn recognize(
+    pub(crate) fn recognize(
         &self,
         method: &Method,
         path: &str,

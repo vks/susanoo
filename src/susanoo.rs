@@ -4,7 +4,7 @@ use std::sync::Arc;
 use futures::{future, Future};
 use futures::future::BoxFuture;
 use hyper::Error as HyperError;
-use hyper::{Method, StatusCode};
+use hyper::{StatusCode, Server, Chunk};
 use hyper::server::{Http, Service, NewService, Response};
 use hyper::server::Request;
 use typemap::{TypeMap, Key};
@@ -29,33 +29,20 @@ pub(crate) struct ServerInner {
 
 
 /// Root object of the application.
-pub struct Server {
+pub struct Susanoo {
     inner: Arc<ServerInner>,
 }
 
-impl Server {
+impl Susanoo {
     /// Creates an empty instance of the server.
-    pub fn new() -> Self {
-        Server {
+    pub fn new(router: Router) -> Self {
+        Susanoo {
             inner: Arc::new(ServerInner {
-                router: Router::default(),
+                router,
                 middlewares: Vec::new(),
                 states: Arc::new(States::custom()),
             }),
         }
-    }
-
-    /// Add a new route to the server.
-    pub fn with_route<S, M>(mut self, method: Method, pattern: S, middleware: M) -> Self
-    where
-        S: AsRef<str>,
-        M: Middleware,
-    {
-        Arc::get_mut(&mut self.inner)
-            .unwrap()
-            .router
-            .add_route(method, pattern, middleware);
-        self
     }
 
     /// Put a middleware into the server.
@@ -78,31 +65,30 @@ impl Server {
     }
 
     /// Run server.
-    pub fn run(self, addr: &str) {
+    pub fn into_server(self, addr: &str) -> Result<Server<Self, ::hyper::Body>, HyperError> {
         let addr = addr.parse().unwrap();
-        let http = Http::new().bind(&addr, self).unwrap();
-        http.run().unwrap();
+        Http::<Chunk>::new().bind(&addr, self)
     }
 }
 
-impl NewService for Server {
+impl NewService for Susanoo {
     type Request = Request;
     type Response = Response;
     type Error = HyperError;
-    type Instance = RootService;
+    type Instance = SusanooService;
 
     fn new_service(&self) -> io::Result<Self::Instance> {
-        Ok(RootService { inner: self.inner.clone() })
+        Ok(SusanooService { inner: self.inner.clone() })
     }
 }
 
 
 /// An asynchronous task executed by hyper.
-pub struct RootService {
+pub struct SusanooService {
     inner: Arc<ServerInner>,
 }
 
-impl Service for RootService {
+impl Service for SusanooService {
     type Request = Request;
     type Response = Response;
     type Error = HyperError;

@@ -19,7 +19,7 @@ pub mod context;
 pub mod middleware;
 pub mod response;
 pub mod router;
-pub mod server;
+pub mod susanoo;
 
 pub mod contrib {
     pub use futures;
@@ -34,4 +34,6 @@ pub use middleware::{Middleware, MiddlewareStack};
 #[doc(inline)]
 pub use response::{Response, Failure, AsyncResult};
 #[doc(inline)]
-pub use server::Server;
+pub use susanoo::Susanoo;
+#[doc(inline)]
+pub use router::Router;

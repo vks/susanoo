@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use hyper::server::Request;
 use typemap::TypeMap;
-use server::States;
+use susanoo::States;
 use unsafe_any::UnsafeAny;
 
 /// Captured value extracted by the router.
