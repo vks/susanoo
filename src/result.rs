@@ -1,30 +1,10 @@
 use std::error::Error as StdError;
+use hyper::Response;
 use futures::future::BoxFuture;
 use context::Context;
 
-/// Response type
-pub use hyper::server::Response;
-
 /// Asynchronous result type
-pub type AsyncResult<T = Success> = BoxFuture<T, Failure>;
-
-/// Success type
-pub enum Success {
-    Finished(Response),
-    Continue(Context),
-}
-
-impl From<Response> for Success {
-    fn from(response: Response) -> Success {
-        Success::Finished(response)
-    }
-}
-
-impl From<Context> for Success {
-    fn from(context: Context) -> Success {
-        Success::Continue(context)
-    }
-}
+pub type AsyncResult = BoxFuture<Context, Failure>;
 
 
 /// Error type

@@ -4,7 +4,7 @@ extern crate r2d2;
 extern crate r2d2_sqlite;
 extern crate rusqlite;
 
-use susanoo::{Context, Susanoo, Response, AsyncResult, Router, Middleware};
+use susanoo::{Context, Susanoo, AsyncResult, Router, Middleware};
 use susanoo::contrib::hyper::{Get, StatusCode};
 use susanoo::contrib::futures::{future, Future};
 use susanoo::contrib::typemap::Key;
@@ -43,7 +43,7 @@ impl DBMiddleware {
 impl Middleware for DBMiddleware {
     fn call(&self, mut ctx: Context) -> AsyncResult {
         ctx.ext.insert::<DBPool>(DBPool(self.0.clone()));
-        future::ok(ctx.into()).boxed()
+        ctx.next_middleware()
     }
 }
 
@@ -101,16 +101,15 @@ impl Person {
 }
 
 
-fn index(ctx: Context) -> AsyncResult {
-    let db = ctx.ext.get::<DBPool>().unwrap();
-    let conn = try_f!(db.get());
-    let people = try_f!(Person::select(&*conn));
-    future::ok(
-        Response::new()
-            .with_status(StatusCode::Ok)
-            .with_body(format!("people: {:?}", people))
-            .into(),
-    ).boxed()
+fn index(mut ctx: Context) -> AsyncResult {
+    {
+        let db = ctx.ext.get::<DBPool>().unwrap();
+        let conn = try_f!(db.get());
+        let people = try_f!(Person::select(&*conn));
+        ctx.res.set_status(StatusCode::Ok);
+        ctx.res.set_body(format!("people: {:?}", people));
+    }
+    ctx.finish()
 }
 
 

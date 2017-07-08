@@ -1,5 +1,8 @@
-use hyper::{Request as HyperRequest, Method, Uri, HttpVersion, Headers, Body};
+use hyper::{Request as HyperRequest, Response, Method, Uri, HttpVersion, Headers, Body};
 use typemap::SendMap;
+use futures::{future, Future};
+use result::AsyncResult;
+
 
 pub struct Request {
     pub method: Method,
@@ -33,18 +36,38 @@ impl Request {
 }
 
 
+pub enum Status {
+    Finished,
+    Ongoing,
+}
+
+
 /// An object which contains request data, parameters extracted by the router,
 /// global/per-request shared variables.
 pub struct Context {
     pub req: Request,
+    pub res: Response,
     pub ext: SendMap,
+    pub status: Status,
 }
 
 impl Context {
     pub fn from_hyper(req: HyperRequest) -> Self {
         Context {
             req: req.into(),
+            res: Response::new(),
             ext: SendMap::custom(),
+            status: Status::Ongoing,
         }
+    }
+
+    pub fn next_middleware(mut self) -> AsyncResult {
+        self.status = Status::Ongoing;
+        future::ok(self).boxed()
+    }
+
+    pub fn finish(mut self) -> AsyncResult {
+        self.status = Status::Finished;
+        future::ok(self).boxed()
     }
 }

@@ -1,6 +1,6 @@
 use std::sync::Arc;
-use context::Context;
-use response::{Success, AsyncResult};
+use context::{Context, Status};
+use result::AsyncResult;
 use futures::{future, Future};
 
 pub trait Middleware: 'static + Send + Sync {
@@ -42,13 +42,12 @@ impl MiddlewareStack {
 impl Middleware for MiddlewareStack {
     fn call(&self, ctx: Context) -> AsyncResult {
         self.middlewares.iter().fold(
-            future::ok(ctx.into())
-                .boxed(),
+            future::ok(ctx).boxed(),
             |ctx, middleware| {
                 let middleware = middleware.clone();
-                ctx.and_then(move |ctx| match ctx {
-                    Success::Continue(ctx) => middleware.call(ctx),
-                    Success::Finished(resp) => future::ok(resp.into()).boxed(),
+                ctx.and_then(move |ctx| match ctx.status {
+                    Status::Ongoing => middleware.call(ctx),
+                    Status::Finished => future::ok(ctx).boxed(),
                 }).boxed()
             },
         )

@@ -1,16 +1,15 @@
 use std::io;
 use std::sync::Arc;
 
-use futures::{future, Future};
+use futures::Future;
 use futures::future::BoxFuture;
 use hyper::Error as HyperError;
 use hyper::{StatusCode, Server, Chunk};
 use hyper::server::{Http, Service, NewService, Response};
 use hyper::server::Request;
 
-use context::Context;
+use context::{Context, Status};
 use middleware::{Middleware, MiddlewareStack};
-use response::Success;
 
 
 /// Internal state of server
@@ -70,28 +69,26 @@ impl Service for SusanooService {
     type Future = BoxFuture<Response, HyperError>;
 
     fn call(&self, req: Request) -> Self::Future {
-        let ctx = future::ok(Context::from_hyper(req).into()).boxed();
+        let ctx = Context::from_hyper(req);
 
-        // apply middlewares
-        let ctx = self.inner.middlewares.iter().fold(ctx, |ctx, m| {
-            let middleware = m.clone();
-            ctx.and_then(move |ctx| match ctx {
-                Success::Continue(ctx) => middleware.call(ctx),
-                Success::Finished(res) => future::ok(res.into()).boxed(),
-            }).boxed()
-        });
-
-        // convert to Hyper response
-        ctx.then(|resp| match resp {
-            Ok(Success::Finished(resp)) => Ok(resp),
-            Ok(Success::Continue(_ctx)) => Ok(Response::new().with_status(StatusCode::NotFound)),
-            Err(failure) => Ok(
-                failure.response.unwrap_or(
-                    Response::new()
-                        .with_status(StatusCode::InternalServerError)
-                        .with_body(format!("Internal Server Error: {:?}", failure.err)),
+        self.inner
+            .middlewares
+            .call(ctx)
+            .then(|result| match result {
+                Ok(ctx) => {
+                    match ctx.status {
+                        Status::Finished => Ok(ctx.res),
+                        Status::Ongoing => Ok(ctx.res.with_status(StatusCode::NotFound)),
+                    }
+                }
+                Err(failure) => Ok(
+                    failure.response.unwrap_or(
+                        Response::new()
+                            .with_status(StatusCode::InternalServerError)
+                            .with_body(format!("Internal Server Error: {:?}", failure.err)),
+                    ),
                 ),
-            ),
-        }).boxed()
+            })
+            .boxed()
     }
 }

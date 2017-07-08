@@ -3,15 +3,15 @@ use std::collections::HashMap;
 use std::fmt;
 use std::error::Error as StdError;
 use std::sync::Arc;
-use hyper::{Method, StatusCode};
+use futures::{future, Future};
 use hyper::server::Response;
+use hyper::{Method, StatusCode};
 use regex::Regex;
 use typemap::Key;
 
-use futures::{future, Future};
-use response::{AsyncResult, Failure};
 use context::Context;
 use middleware::Middleware;
+use result::{AsyncResult, Failure};
 
 
 #[derive(Debug)]

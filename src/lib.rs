@@ -16,7 +16,7 @@ pub extern crate typemap;
 
 pub mod context;
 pub mod middleware;
-pub mod response;
+pub mod result;
 pub mod router;
 pub mod susanoo;
 
@@ -31,7 +31,7 @@ pub use context::Context;
 #[doc(inline)]
 pub use middleware::{Middleware, MiddlewareStack};
 #[doc(inline)]
-pub use response::{Response, Failure, AsyncResult};
+pub use result::{Failure, AsyncResult};
 #[doc(inline)]
 pub use susanoo::Susanoo;
 #[doc(inline)]
