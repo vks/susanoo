@@ -4,7 +4,7 @@ extern crate r2d2;
 extern crate r2d2_sqlite;
 extern crate rusqlite;
 
-use susanoo::{Context, Susanoo, Response, AsyncResult, Router};
+use susanoo::{Context, Susanoo, Response, AsyncResult, Router, Middleware};
 use susanoo::contrib::hyper::{Get, StatusCode};
 use susanoo::contrib::futures::{future, Future};
 use susanoo::contrib::typemap::Key;
@@ -27,6 +27,24 @@ impl Deref for DBPool {
 
 impl Key for DBPool {
     type Value = Self;
+}
+
+
+struct DBMiddleware(Pool<SqliteConnectionManager>);
+
+impl DBMiddleware {
+    fn new(path: &str) -> Self {
+        let manager = SqliteConnectionManager::new(path);
+        let pool = r2d2::Pool::new(Default::default(), manager).unwrap();
+        DBMiddleware(pool)
+    }
+}
+
+impl Middleware for DBMiddleware {
+    fn call(&self, mut ctx: Context) -> AsyncResult {
+        ctx.map.insert::<DBPool>(DBPool(self.0.clone()));
+        future::ok(ctx.into()).boxed()
+    }
 }
 
 
@@ -84,7 +102,7 @@ impl Person {
 
 
 fn index(ctx: Context) -> AsyncResult {
-    let db = ctx.states.get::<DBPool>().unwrap();
+    let db = ctx.map.get::<DBPool>().unwrap();
     let conn = try_f!(db.get());
     let people = try_f!(Person::select(&*conn));
     future::ok(
@@ -110,13 +128,9 @@ fn init_db(path: &str) {
 fn main() {
     init_db("app.sqlite");
 
-    // create DB connection pool
-    let manager = SqliteConnectionManager::new("app.sqlite");
-    let pool = r2d2::Pool::new(Default::default(), manager).unwrap();
-    let db = DBPool(pool);
-
+    let db = DBMiddleware::new("app.sqlite");
     let router = Router::default().with_route(Get, "/", index);
-    let susanoo = Susanoo::new().with(router).with_state(db);
+    let susanoo = Susanoo::new().with(db).with(router);
 
     let server = susanoo.into_server("0.0.0.0:4000").unwrap();
     server.run().unwrap();

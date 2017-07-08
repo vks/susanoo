@@ -2,7 +2,7 @@ extern crate susanoo;
 #[macro_use]
 extern crate hyper;
 
-use susanoo::{Susanoo, Context, Response, AsyncResult, Router};
+use susanoo::{Susanoo, Context, Response, AsyncResult, Router, Middleware};
 use susanoo::middleware::MiddlewareStack;
 use susanoo::contrib::hyper::{Get, StatusCode};
 use susanoo::contrib::hyper::header::{Authorization, Basic};
@@ -39,8 +39,18 @@ impl std::ops::Deref for UserList {
         &self.0
     }
 }
+
 impl Key for UserList {
     type Value = Self;
+}
+
+impl Middleware for UserList {
+    fn call(&self, mut ctx: Context) -> AsyncResult {
+        ctx.map.insert::<UserList>(
+            UserList(self.0.clone()),
+        );
+        future::ok(ctx.into()).boxed()
+    }
 }
 
 
@@ -63,8 +73,9 @@ fn check_auth(mut ctx: Context) -> AsyncResult {
             }
         };
 
-        let users = ctx.states.get::<UserList>().unwrap();
-        let found: Option<User> = users
+        let found: Option<User> = ctx.map
+            .get::<UserList>()
+            .unwrap()
             .iter()
             .find(|&user| user.verify(username, password))
             .map(|u| u.clone());
@@ -122,9 +133,7 @@ fn main() {
     let router = Router::default()
         .with_route(Get, "/", index)
         .with_route(Get, "/public", public);
-    let susanoo = Susanoo::new().with(router).with_state(
-        UserList(users),
-    );
+    let susanoo = Susanoo::new().with(UserList(users)).with(router);
 
     let server = susanoo.into_server("0.0.0.0:4000").unwrap();
     server.run().unwrap();

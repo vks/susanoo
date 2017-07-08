@@ -7,22 +7,15 @@ use hyper::Error as HyperError;
 use hyper::{StatusCode, Server, Chunk};
 use hyper::server::{Http, Service, NewService, Response};
 use hyper::server::Request;
-use typemap::{TypeMap, Key};
-use unsafe_any::UnsafeAny;
 
 use context::Context;
 use middleware::{Middleware, MiddlewareStack};
 use response::Success;
 
 
-pub type States = TypeMap<UnsafeAny + 'static + Send + Sync>;
-
-
 /// Internal state of server
-#[doc(visible)]
 pub(crate) struct ServerInner {
     middlewares: MiddlewareStack,
-    states: Arc<States>,
 }
 
 
@@ -34,12 +27,7 @@ pub struct Susanoo {
 impl Susanoo {
     /// Creates an empty instance of the server.
     pub fn new() -> Self {
-        Susanoo {
-            inner: Arc::new(ServerInner {
-                middlewares: MiddlewareStack::default(),
-                states: Arc::new(States::custom()),
-            }),
-        }
+        Susanoo { inner: Arc::new(ServerInner { middlewares: MiddlewareStack::default() }) }
     }
 
     /// Put a middleware into the server.
@@ -51,17 +39,7 @@ impl Susanoo {
         self
     }
 
-    /// Insert a shared state into the server.
-    pub fn with_state<T: Key<Value = T> + Send + Sync>(mut self, value: T) -> Self {
-        {
-            let inner = Arc::get_mut(&mut self.inner).unwrap();
-            let mut states = Arc::get_mut(&mut inner.states).unwrap();
-            states.insert::<T>(value);
-        }
-        self
-    }
-
-    /// Run server.
+    /// Create server.
     pub fn into_server(self, addr: &str) -> Result<Server<Self, ::hyper::Body>, HyperError> {
         let addr = addr.parse().unwrap();
         Http::<Chunk>::new().bind(&addr, self)
@@ -92,7 +70,7 @@ impl Service for SusanooService {
     type Future = BoxFuture<Response, HyperError>;
 
     fn call(&self, req: Request) -> Self::Future {
-        let ctx = future::ok(Context::new(req, self.inner.states.clone()).into()).boxed();
+        let ctx = future::ok(Context::new(req).into()).boxed();
 
         // apply middlewares
         let ctx = self.inner.middlewares.iter().fold(ctx, |ctx, m| {
