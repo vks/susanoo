@@ -36,4 +36,4 @@ pub use response::{Response, Failure, AsyncResult};
 #[doc(inline)]
 pub use susanoo::Susanoo;
 #[doc(inline)]
-pub use router::Router;
+pub use router::{Router, Captures};

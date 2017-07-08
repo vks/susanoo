@@ -6,10 +6,11 @@ use std::sync::Arc;
 use hyper::{Method, StatusCode};
 use hyper::server::Response;
 use regex::Regex;
+use typemap::Key;
 
 use futures::{future, Future};
 use response::{AsyncResult, Failure};
-use context::{Context, Captures};
+use context::Context;
 use middleware::Middleware;
 
 
@@ -28,6 +29,14 @@ impl StdError for NoRoute {
     }
 }
 
+
+/// Captured value extracted by the router.
+#[derive(Debug)]
+pub struct Captures(Vec<(Option<String>, String)>);
+
+impl Key for Captures {
+    type Value = Self;
+}
 
 
 struct Route {
@@ -80,7 +89,7 @@ impl Middleware for Router {
         let path = ctx.req.path().to_owned();
         match self.recognize(&method, &path) {
             Ok((middleware, cap)) => {
-                ctx.cap = Some(cap);
+                ctx.map.insert::<Captures>(cap);
                 middleware.call(ctx)
             }
             Err(err) => {
@@ -95,7 +104,7 @@ impl Middleware for Router {
 }
 
 
-fn get_owned_captures(re: &Regex, path: &str) -> Option<Vec<(Option<String>, String)>> {
+fn get_owned_captures(re: &Regex, path: &str) -> Option<Captures> {
     re.captures(path).map(|caps| {
         let mut res = Vec::with_capacity(caps.len());
         for (i, name) in re.capture_names().enumerate() {
@@ -105,7 +114,7 @@ fn get_owned_captures(re: &Regex, path: &str) -> Option<Vec<(Option<String>, Str
             };
             res.push((name.map(|s| s.to_owned()), val.as_str().to_owned()));
         }
-        res
+        Captures(res)
     })
 }
 
