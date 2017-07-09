@@ -5,6 +5,9 @@ use futures::{future, Future};
 
 pub trait Middleware: 'static + Send + Sync {
     fn call(&self, ctx: Context) -> AsyncResult;
+    fn call_ongoing(&self, ctx: Context) -> AsyncResult {
+        future::ok(ctx).boxed()
+    }
 }
 
 impl<F> Middleware for F
@@ -47,7 +50,7 @@ impl Middleware for MiddlewareStack {
                 let middleware = middleware.clone();
                 ctx.and_then(move |ctx| match ctx.status {
                     Status::Ongoing => middleware.call(ctx),
-                    Status::Finished => future::ok(ctx).boxed(),
+                    Status::Finished => middleware.call_ongoing(ctx),
                 }).boxed()
             },
         )
