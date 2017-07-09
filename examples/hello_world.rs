@@ -11,7 +11,7 @@ fn hello(mut ctx: Context) -> AsyncResult {
 
 fn main() {
     let router = Router::default().with_route(Get, "/", hello);
-    let susanoo = Susanoo::new().with(router);
+    let susanoo = Susanoo::new(router);
     let server = susanoo.into_server("0.0.0.0:4000").unwrap();
     server.run().unwrap();
 }

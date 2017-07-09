@@ -9,12 +9,12 @@ use hyper::server::{Http, Service, NewService, Response};
 use hyper::server::Request;
 
 use context::{Context, Status};
-use middleware::{Middleware, MiddlewareStack};
+use middleware::Middleware;
 
 
 /// Internal state of server
 pub(crate) struct ServerInner {
-    middlewares: MiddlewareStack,
+    middleware: Arc<Middleware>,
 }
 
 
@@ -25,17 +25,8 @@ pub struct Susanoo {
 
 impl Susanoo {
     /// Creates an empty instance of the server.
-    pub fn new() -> Self {
-        Susanoo { inner: Arc::new(ServerInner { middlewares: MiddlewareStack::default() }) }
-    }
-
-    /// Put a middleware into the server.
-    pub fn with<M: Middleware>(mut self, middleware: M) -> Self {
-        Arc::get_mut(&mut self.inner)
-            .unwrap()
-            .middlewares
-            .push(middleware);
-        self
+    pub fn new<M: Middleware>(middleware: M) -> Self {
+        Susanoo { inner: Arc::new(ServerInner { middleware: Arc::new(middleware) }) }
     }
 
     /// Create server.
@@ -72,7 +63,7 @@ impl Service for SusanooService {
         let ctx = Context::from_hyper(req);
 
         self.inner
-            .middlewares
+            .middleware
             .call(ctx)
             .then(|result| match result {
                 Ok(ctx) => {

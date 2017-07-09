@@ -43,7 +43,7 @@ fn main() {
         .with_route(Post, "/", index_post)
         .with_route(Post, "/post", index_post)
         .with_route(Get, r"/echo/([^/]+)/(?P<hoge>[^/]+)/([^/]+)", show_captures);
-    let susanoo = Susanoo::new().with(router);
+    let susanoo = Susanoo::new(router);
     let server = susanoo.into_server("0.0.0.0:4000").unwrap();
     server.run().unwrap();
 }

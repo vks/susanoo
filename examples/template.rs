@@ -1,7 +1,8 @@
+#[macro_use]
 extern crate susanoo;
 extern crate tera;
 
-use susanoo::{Susanoo, Router, Context, AsyncResult, Middleware};
+use susanoo::{Susanoo, Router, Context, AsyncResult, Middleware,Chain};
 use susanoo::contrib::hyper::{Get, StatusCode};
 use susanoo::contrib::hyper::header::ContentType;
 use susanoo::contrib::typemap::Key;
@@ -75,7 +76,7 @@ fn index(mut ctx: Context) -> AsyncResult {
 fn main() {
     let tera = TeraMiddleware::new();
     let router = Router::default().with_route(Get, "/", index);
-    let susanoo = Susanoo::new().with(tera).with(router);
+    let susanoo = Susanoo::new(chain!(tera, router));
     let server = susanoo.into_server("0.0.0.0:4000").unwrap();
 
     server.run().unwrap();

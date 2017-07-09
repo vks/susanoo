@@ -29,7 +29,7 @@ pub mod contrib {
 #[doc(inline)]
 pub use context::Context;
 #[doc(inline)]
-pub use middleware::{Middleware, MiddlewareStack};
+pub use middleware::{Middleware, Chain};
 #[doc(inline)]
 pub use result::{Failure, AsyncResult};
 #[doc(inline)]

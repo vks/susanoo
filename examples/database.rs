@@ -1,10 +1,10 @@
-#[macro_use(try_f)]
+#[macro_use]
 extern crate susanoo;
 extern crate r2d2;
 extern crate r2d2_sqlite;
 extern crate rusqlite;
 
-use susanoo::{Context, Susanoo, AsyncResult, Router, Middleware};
+use susanoo::{Context, Susanoo, AsyncResult, Router, Middleware, Chain};
 use susanoo::contrib::hyper::{Get, StatusCode};
 use susanoo::contrib::futures::{future, Future};
 use susanoo::contrib::typemap::Key;
@@ -129,7 +129,7 @@ fn main() {
 
     let db = DBMiddleware::new("app.sqlite");
     let router = Router::default().with_route(Get, "/", index);
-    let susanoo = Susanoo::new().with(db).with(router);
+    let susanoo = Susanoo::new(chain!(db, router));
 
     let server = susanoo.into_server("0.0.0.0:4000").unwrap();
     server.run().unwrap();
