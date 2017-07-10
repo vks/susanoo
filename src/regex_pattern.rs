@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::ops::Deref;
+use std::ops::{Deref, Index};
 use std::sync::Arc;
 use regex::Regex;
 use typemap::Key;
@@ -64,6 +64,20 @@ impl OwnedCaptures {
 
     pub fn name(&self, name: &str) -> Option<&str> {
         self.names.get(name).and_then(|&i| self.get(i))
+    }
+}
+
+impl Index<usize> for OwnedCaptures {
+    type Output = str;
+    fn index(&self, i: usize) -> &str {
+        self.get(i).unwrap()
+    }
+}
+
+impl<'i> Index<&'i str> for OwnedCaptures {
+    type Output = str;
+    fn index<'a>(&'a self, name: &'i str) -> &'a str {
+        self.name(name).unwrap()
     }
 }
 

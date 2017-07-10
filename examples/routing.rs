@@ -35,9 +35,9 @@ fn show_captures(mut ctx: Context) -> AsyncResult {
     ctx.res.set_status(StatusCode::Ok);
     ctx.res.set_body(format!(
         "Captures: {:?}, {:?}, {:?} ({:?})",
-        cap.get(1),
-        cap.name("hoge"),
-        cap.get(3),
+        &cap[1],
+        &cap["hoge"],
+        &cap[3],
         cap
     ));
     ctx.finish()
