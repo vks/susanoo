@@ -1,4 +1,4 @@
-# `susanoo` [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/ubnt-intrepid/susanoo/master/LICENSE) [![Build Status](https://travis-ci.org/ubnt-intrepid/susanoo.svg?branch=master)](https://travis-ci.org/ubnt-intrepid/susanoo) [![Join the chat at https://gitter.im/ubnt-intrepid/susanoo](https://badges.gitter.im/ubnt-intrepid/susanoo.svg)](https://gitter.im/ubnt-intrepid/susanoo?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+# `susanoo` [![Build Status](https://travis-ci.org/ubnt-intrepid/susanoo.svg?branch=master)](https://travis-ci.org/ubnt-intrepid/susanoo) [![Join the chat at https://gitter.im/ubnt-intrepid/susanoo](https://badges.gitter.im/ubnt-intrepid/susanoo.svg)](https://gitter.im/ubnt-intrepid/susanoo?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 __WARNING__:  
 The development of this project is currently under development.
@@ -14,7 +14,7 @@ The design of this project is highly inspired by other Web frameworks, e.g. Iron
 ```rust
 extern crate susanoo;
 
-use susanoo::{Susanoo, Router, Context, AsyncResult};
+use susanoo::{Susanoo, Router, Context, AsyncResult, Chain};
 use susanoo::contrib::hyper::{Get, StatusCode};
 
 fn hello(ctx: mut Context) -> AsyncResult {
@@ -26,14 +26,17 @@ fn hello(ctx: mut Context) -> AsyncResult {
 fn main() {
     let router = Router::default()
         .with_route(Get, "/", hello);
-    let susanoo = Susanoo::default()
-        .with(router);
-    let server = susanoo.into_server("localhost:4000");
+    let server = Susanoo::new(router).into_server("0.0.0.0:4000").unwrap();
 
     server.run().unwrap();
 }
 ```
 
-## Roadmaps
-- [ ] Add support for static file handling
-- [ ] Template engine
+## Documentation
+* [master](https://ubnt-intrepid/susanoo/susanoo/index.html)
+
+## License
+`susanoo` is primarily distributed under the terms of both the MIT license and
+the Apache License (Version 2.0), with portions covered by various BSD-like licenses.
+
+See [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT) for details.
