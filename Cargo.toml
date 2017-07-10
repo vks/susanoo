@@ -1,10 +1,11 @@
 [package]
 name = "susanoo"
-description = "A micro Web framework, based on Hyper and Tokio"
+description = "A micro Web framework, based on Hyper and Futures"
 authors = ["Yusuke Sasaki <yusuke.sasaki.nuem@gmail.com>"]
+license = "MIT/Apache-2.0"
 version = "0.0.1"
 repository = "https://github.com/ubnt-intrepid/susanoo.git"
-documentation = "https://ubnt-intrepid.github.io/susanoo/susanoo"
+documentation = "https://ubnt-intrepid.github.io/susanoo/susanoo/index.html"
 
 [dependencies]
 hyper = "~0.11"

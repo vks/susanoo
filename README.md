@@ -33,7 +33,7 @@ fn main() {
 ```
 
 ## Documentation
-* [master](https://ubnt-intrepid/susanoo/susanoo/index.html)
+* [master](https://ubnt-intrepid.github.io/susanoo/susanoo/index.html)
 
 ## License
 `susanoo` is primarily distributed under the terms of both the MIT license and

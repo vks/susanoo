@@ -1,4 +1,4 @@
-use hyper::{Request as HyperRequest, Method, Uri, HttpVersion, Headers, Body};
+use hyper::{Request as HyperRequest, Method, HttpVersion, Headers, Body};
 use url::Url;
 
 
