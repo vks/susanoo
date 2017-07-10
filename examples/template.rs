@@ -2,7 +2,7 @@
 extern crate susanoo;
 extern crate tera;
 
-use susanoo::{Susanoo, Router, Context, AsyncResult, Middleware,Chain};
+use susanoo::{Susanoo, Router, Context, AsyncResult, Middleware, Chain};
 use susanoo::contrib::hyper::{Get, StatusCode};
 use susanoo::contrib::hyper::header::ContentType;
 use susanoo::contrib::typemap::Key;

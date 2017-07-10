@@ -33,7 +33,13 @@ fn index_post(mut ctx: Context) -> AsyncResult {
 fn show_captures(mut ctx: Context) -> AsyncResult {
     let cap = ctx.get_ext::<OwnedCaptures>().unwrap();
     ctx.res.set_status(StatusCode::Ok);
-    ctx.res.set_body(format!("Captures: {:?}", cap));
+    ctx.res.set_body(format!(
+        "Captures: {:?}, {:?}, {:?} ({:?})",
+        cap.get(1),
+        cap.name("hoge"),
+        cap.get(3),
+        cap
+    ));
     ctx.finish()
 }
 
