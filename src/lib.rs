@@ -37,4 +37,4 @@ pub use result::{Failure, AsyncResult};
 #[doc(inline)]
 pub use susanoo::Susanoo;
 #[doc(inline)]
-pub use router::{Router, Captures};
+pub use router::{Router, OwnedCaptures};

@@ -1,6 +1,6 @@
 extern crate susanoo;
 
-use susanoo::{Context, Susanoo, AsyncResult, Router, Captures};
+use susanoo::{Context, Susanoo, AsyncResult, Router, OwnedCaptures};
 use susanoo::contrib::hyper::{Get, Post, StatusCode};
 use susanoo::contrib::futures::{Future, Stream};
 
@@ -31,7 +31,7 @@ fn index_post(mut ctx: Context) -> AsyncResult {
 }
 
 fn show_captures(mut ctx: Context) -> AsyncResult {
-    let cap = ctx.get_ext::<Captures>().unwrap();
+    let cap = ctx.get_ext::<OwnedCaptures>().unwrap();
     ctx.res.set_status(StatusCode::Ok);
     ctx.res.set_body(format!("Captures: {:?}", cap));
     ctx.finish()

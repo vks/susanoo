@@ -30,15 +30,6 @@ impl StdError for NoRoute {
 }
 
 
-/// Captured value extracted by the router.
-#[derive(Debug, Clone)]
-pub struct Captures(Vec<(Option<String>, String)>);
-
-impl Key for Captures {
-    type Value = Self;
-}
-
-
 struct Route {
     pattern: Regex,
     middleware: Arc<Middleware>,
@@ -51,7 +42,8 @@ pub struct Router {
 }
 
 impl Router {
-    pub fn with_route<S, M>(mut self, method: Method, pattern: S, middleware: M) -> Self
+    /// Add a new route matching both method and given regexp pattern.
+    pub fn add_route<S, M>(&mut self, method: Method, pattern: S, middleware: M) -> &mut Self
     where
         S: AsRef<str>,
         M: Middleware,
@@ -68,15 +60,27 @@ impl Router {
         self
     }
 
+    /// Add a new route and return itself as return value.
+    ///
+    /// This method is useful for builder-style pattern.
+    pub fn with_route<S, M>(mut self, method: Method, pattern: S, middleware: M) -> Self
+    where
+        S: AsRef<str>,
+        M: Middleware,
+    {
+        self.add_route(method, pattern, middleware);
+        self
+    }
+
     pub(crate) fn recognize(
         &self,
         method: &Method,
         path: &str,
-    ) -> Result<(Arc<Middleware>, Captures), NoRoute> {
+    ) -> Result<(&Middleware, OwnedCaptures), NoRoute> {
         let routes = self.routes.get(method).ok_or(NoRoute)?;
         for route in routes {
             if let Some(caps) = get_owned_captures(&route.pattern, path) {
-                return Ok((route.middleware.clone(), caps));
+                return Ok((&*route.middleware, caps));
             }
         }
         Err(NoRoute)
@@ -102,17 +106,48 @@ impl Middleware for Router {
 }
 
 
-fn get_owned_captures(re: &Regex, path: &str) -> Option<Captures> {
-    re.captures(path).map(|caps| {
-        let mut res = Vec::with_capacity(caps.len());
+/// Captured value extracted by the router.
+#[derive(Debug, Clone)]
+pub struct OwnedCaptures {
+    matches: Vec<(Option<String>, String)>,
+    names: HashMap<String, usize>,
+}
+
+impl OwnedCaptures {
+    pub fn get(&self, i: usize) -> Option<&str> {
+        self.matches.get(i).map(|&(_, ref s)| s.as_str())
+    }
+
+    pub fn name(&self, name: &str) -> Option<&str> {
+        self.names.get(name).map(|&i| {
+            self.matches[i].1.as_str()
+        })
+    }
+}
+
+impl Key for OwnedCaptures {
+    type Value = Self;
+}
+
+fn get_owned_captures(re: &Regex, s: &str) -> Option<OwnedCaptures> {
+    re.captures(s).map(|caps| {
+        let mut matches = Vec::with_capacity(caps.len());
+        let mut names = HashMap::new();
+
         for (i, name) in re.capture_names().enumerate() {
-            let val = match name {
-                Some(name) => caps.name(name).unwrap(),
-                None => caps.get(i).unwrap(),
-            };
-            res.push((name.map(|s| s.to_owned()), val.as_str().to_owned()));
+            match name {
+                Some(name) => {
+                    let m = caps.name(name).unwrap();
+                    matches.push((Some(name.to_owned()), m.as_str().to_owned()));
+                    names.insert(name.to_owned(), i);
+                }
+                None => {
+                    let m = caps.get(i).unwrap();
+                    matches.push((None, m.as_str().to_owned()));
+                }
+            }
         }
-        Captures(res)
+        OwnedCaptures { matches, names }
     })
 }
 
