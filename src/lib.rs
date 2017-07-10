@@ -17,6 +17,7 @@ pub extern crate typemap;
 pub mod context;
 pub mod middleware;
 pub mod result;
+pub mod regex_pattern;
 pub mod request;
 pub mod router;
 pub mod susanoo;
@@ -36,4 +37,6 @@ pub use result::{Failure, AsyncResult};
 #[doc(inline)]
 pub use susanoo::Susanoo;
 #[doc(inline)]
-pub use router::{Router, OwnedCaptures};
+pub use router::Router;
+#[doc(inline)]
+pub use regex_pattern::OwnedCaptures;
