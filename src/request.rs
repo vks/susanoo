@@ -32,7 +32,9 @@ impl Request {
         self.url.path()
     }
 
-    /// Takes the value of request body with its ownership, and put `None` to its place as a substitute.
+    /// Takes the value of request body with its ownership,
+    /// and put `None` to its place as a substitute.
+    ///
     /// If the body has already been taken out, the method will return a `None`.
     pub fn take_body(&mut self) -> Option<Body> {
         self.body.take()

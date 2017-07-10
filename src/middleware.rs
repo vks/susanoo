@@ -5,7 +5,8 @@ use futures::{future, Future};
 
 /// This traits represents a `Middleware`
 pub trait Middleware: 'static + Send + Sync {
-    /// Handler function called if the process has not finished yet (i.e. `ctx.status == Status::Ongoing`).
+    /// Handler function called if the process has not finished yet
+    /// (i.e. `ctx.status == Status::Ongoing`).
     fn call(&self, ctx: Context) -> AsyncResult;
 
     /// Handler function called if the process has done (i.e. `ctx.status == Status::Finished`).
