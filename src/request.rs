@@ -1,12 +1,11 @@
-use hyper::{Request as HyperRequest, Method, HttpVersion, Headers, Body};
-use url::Url;
+use hyper::{Request as HyperRequest, Method, Uri, HttpVersion, Headers, Body};
 
 
 /// HTTP request, reconstructed from `hyper::Request`.
 pub struct Request {
     pub method: Method,
     pub http_version: HttpVersion,
-    pub url: Url,
+    pub uri: Uri,
     pub headers: Headers,
     body: Option<Body>,
 }
@@ -14,11 +13,9 @@ pub struct Request {
 impl From<HyperRequest> for Request {
     fn from(req: HyperRequest) -> Self {
         let (method, uri, http_version, headers, body) = req.deconstruct();
-        // TODO: treat url::ParseError
-        let url = Url::parse(uri.as_ref()).unwrap();
         Request {
             method,
-            url,
+            uri,
             http_version,
             headers,
             body: Some(body),
@@ -29,7 +26,7 @@ impl From<HyperRequest> for Request {
 impl Request {
     /// Returns the path of request URL.
     pub fn path(&self) -> &str {
-        self.url.path()
+        self.uri.path()
     }
 
     /// Takes the value of request body with its ownership,

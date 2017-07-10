@@ -13,7 +13,6 @@ extern crate regex;
 extern crate tokio_core;
 #[doc(hidden)]
 pub extern crate typemap;
-extern crate url;
 
 pub mod context;
 pub mod middleware;
