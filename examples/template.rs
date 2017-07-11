@@ -3,7 +3,7 @@ extern crate susanoo;
 extern crate tera;
 
 use susanoo::{Susanoo, Router, Context, AsyncResult, Middleware, Chain};
-use susanoo::contrib::hyper::{Get, StatusCode};
+use susanoo::contrib::hyper::{Get, StatusCode, Response};
 use susanoo::contrib::hyper::header::ContentType;
 use susanoo::contrib::typemap::Key;
 use std::sync::Arc;
@@ -41,24 +41,26 @@ impl Key for TeraMiddleware {
 
 impl Middleware for TeraMiddleware {
     fn call(&self, mut ctx: Context) -> AsyncResult {
-        ctx.insert_ext::<TeraMiddleware>(self.clone());
-        ctx.next_middleware()
+        ctx.ext.insert::<TeraMiddleware>(self.clone());
+        ctx.next()
     }
 }
 
 
 trait TeraMiddlewareExt {
-    fn render(&mut self, name: &str, ctx: &TeraContext);
+    fn render(&mut self, name: &str, ctx: &TeraContext) -> Response;
 }
 
 impl TeraMiddlewareExt for Context {
-    fn render(&mut self, name: &str, ctx: &TeraContext) {
+    fn render(&mut self, name: &str, ctx: &TeraContext) -> Response {
         let body = {
-            let tera = self.get_ext_ref::<TeraMiddleware>().unwrap();
+            let tera = self.ext.get::<TeraMiddleware>().unwrap();
             tera.0.render(name, ctx).unwrap()
         };
-        self.res.headers_mut().set(ContentType::html());
-        self.res.set_body(body);
+        Response::new()
+            .with_status(StatusCode::Ok)
+            .with_header(ContentType::html())
+            .with_body(body)
     }
 }
 
@@ -68,9 +70,8 @@ fn index(mut ctx: Context) -> AsyncResult {
     tera_ctx.add("name", &"Alice".to_owned());
     tera_ctx.add("text", &"Welcome to the wonderland".to_owned());
 
-    ctx.res.set_status(StatusCode::Ok);
-    ctx.render("index.html", &tera_ctx);
-    ctx.finish()
+    let rendered = ctx.render("index.html", &tera_ctx);
+    ctx.finish(rendered)
 }
 
 fn main() {

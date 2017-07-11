@@ -4,7 +4,7 @@ extern crate susanoo;
 extern crate hyper;
 
 use susanoo::{Susanoo, Context, AsyncResult, Router, Middleware, Chain};
-use susanoo::contrib::hyper::{Get, StatusCode};
+use susanoo::contrib::hyper::{Get, StatusCode, Response};
 use susanoo::contrib::hyper::header::{Authorization, Basic};
 use susanoo::contrib::typemap::Key;
 
@@ -45,8 +45,10 @@ impl Key for UserList {
 
 impl Middleware for UserList {
     fn call(&self, mut ctx: Context) -> AsyncResult {
-        ctx.insert_ext(UserList(self.0.clone()));
-        ctx.next_middleware()
+        ctx.ext.insert::<UserList>(
+            UserList(self.0.clone()),
+        );
+        ctx.next()
     }
 }
 
@@ -64,53 +66,53 @@ fn check_auth(mut ctx: Context) -> AsyncResult {
                                password: Some(ref password),
                            })) => (username, password),
         _ => {
-            ctx.res.set_status(StatusCode::Unauthorized);
-            ctx.res.headers_mut().set(WWWAuthenticate(
-                "Basic realm=\"main\""
-                    .to_owned(),
-            ));
-            return ctx.finish();
+            return ctx.finish(
+                Response::new()
+                    .with_status(StatusCode::Unauthorized)
+                    .with_header(WWWAuthenticate("Basic realm=\"main\"".to_owned())),
+            );
         }
     };
 
-    let found: Option<User> = ctx.get_ext_ref::<UserList>()
+    let found: Option<User> = ctx.ext
+        .get::<UserList>()
         .unwrap()
         .iter()
         .find(|&user| user.verify(username, password))
         .map(|u| u.clone());
     match found {
         Some(user) => {
-            ctx.insert_ext(user);
+            ctx.ext.insert::<User>(user);
         }
         None => {
-            ctx.res.set_status(StatusCode::Unauthorized);
-            ctx.res.headers_mut().set(WWWAuthenticate(
-                "Basic realm=\"main\""
-                    .to_owned(),
-            ));
-            return ctx.finish();
+            return ctx.finish(
+                Response::new()
+                    .with_status(StatusCode::Unauthorized)
+                    .with_header(WWWAuthenticate("Basic realm=\"main\"".to_owned())),
+            );
         }
     }
 
-    ctx.next_middleware()
+    ctx.next()
 }
 
 
 
 fn index(mut ctx: Context) -> AsyncResult {
-    let user = ctx.get_ext::<User>().unwrap();
-    ctx.res.set_status(StatusCode::Ok);
-    ctx.res.set_body(format!(
-        "<h1>Welcome, {}!</h1>",
-        user.username
-    ));
-    ctx.finish()
+    let user = ctx.ext.remove::<User>().unwrap();
+    ctx.finish(
+        Response::new()
+            .with_status(StatusCode::Ok)
+            .with_body(format!("<h1>Welcome, {}!</h1>", user.username)),
+    )
 }
 
-fn public(mut ctx: Context) -> AsyncResult {
-    ctx.res.set_status(StatusCode::Ok);
-    ctx.res.set_body("<h1>Public page</h1>");
-    ctx.finish()
+fn public(ctx: Context) -> AsyncResult {
+    ctx.finish(
+        Response::new()
+            .with_status(StatusCode::Ok)
+            .with_body("<h1>Public page</h1>"),
+    )
 }
 
 fn main() {

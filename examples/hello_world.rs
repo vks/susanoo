@@ -1,12 +1,13 @@
 extern crate susanoo;
 
 use susanoo::{Context, Susanoo, AsyncResult, Router};
-use susanoo::contrib::hyper::{Get, StatusCode};
+use susanoo::contrib::hyper::{Get, StatusCode, Response};
 
-fn hello(mut ctx: Context) -> AsyncResult {
-    ctx.res.set_status(StatusCode::Ok);
-    ctx.res.set_body("Hello, world");
-    ctx.finish()
+fn hello(ctx: Context) -> AsyncResult {
+    let res = Response::new()
+        .with_status(StatusCode::Ok)
+        .with_body("Hello, world");
+    ctx.finish(res)
 }
 
 fn main() {

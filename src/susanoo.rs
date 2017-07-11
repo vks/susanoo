@@ -8,7 +8,7 @@ use hyper::{StatusCode, Server, Chunk};
 use hyper::server::{Http, Service, NewService, Response};
 use hyper::server::Request;
 
-use context::{Context, Status};
+use context::Context;
 use middleware::Middleware;
 
 
@@ -67,9 +67,9 @@ impl Service for SusanooService {
             .call(ctx)
             .then(|result| match result {
                 Ok(ctx) => {
-                    match ctx.status {
-                        Status::Finished => Ok(ctx.res),
-                        Status::Ongoing => Ok(ctx.res.with_status(StatusCode::NotFound)),
+                    match ctx.res {
+                        Some(res) => Ok(res),
+                        None => Ok(Response::new().with_status(StatusCode::NotFound)),
                     }
                 }
                 Err(failure) => Ok(failure.response),

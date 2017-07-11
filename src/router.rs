@@ -91,7 +91,7 @@ impl Middleware for Router {
     fn call(&self, mut ctx: Context) -> AsyncResult {
         match self.recognize(&ctx.req.method, &ctx.req.path()) {
             Ok((middleware, cap)) => {
-                ctx.insert_ext(cap);
+                ctx.ext.insert::<OwnedCaptures>(cap);
                 middleware.call(ctx)
             }
             Err(err) => {

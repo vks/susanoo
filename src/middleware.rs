@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use context::{Context, Status};
+use context::Context;
 use result::AsyncResult;
 use futures::{future, Future};
 
@@ -12,7 +12,7 @@ pub trait Middleware: 'static + Send + Sync {
     /// Handler function called if the process has done (i.e. `ctx.status == Status::Finished`).
     ///
     /// By default, this function returns a future contains given `ctx` immediately.
-    fn call_finished(&self, ctx: Context) -> AsyncResult {
+    fn after(&self, ctx: Context) -> AsyncResult {
         future::ok(ctx).boxed()
     }
 }
@@ -55,9 +55,10 @@ impl Middleware for Chain {
             future::ok(ctx).boxed(),
             |ctx, middleware| {
                 let middleware = middleware.clone();
-                ctx.and_then(move |ctx| match ctx.status {
-                    Status::Ongoing => middleware.call(ctx),
-                    Status::Finished => middleware.call_finished(ctx),
+                ctx.and_then(move |ctx| if ctx.res.is_some() {
+                    middleware.after(ctx)
+                } else {
+                    middleware.call(ctx)
                 }).boxed()
             },
         )
@@ -86,10 +87,10 @@ mod tests {
     #[test]
     fn chain_macro() {
         fn f1(ctx: Context) -> AsyncResult {
-            ctx.next_middleware()
+            ctx.next()
         }
         fn f2(ctx: Context) -> AsyncResult {
-            ctx.next_middleware()
+            ctx.next()
         }
         let _chain: Chain = chain!(f1, f2);
     }
