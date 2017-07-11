@@ -4,7 +4,7 @@ __WARNING__:
 The development of this project is currently under development.
 
 ## Overview
-`susanoo` is a micro Web framework for Rust, focused on asynchronous handling and easy of use.
+`susanoo` is a micro Web framework for Rust, focused on asynchronous handling and ease of use.
 
 The design of this project is highly inspired by other Web frameworks, e.g. Iron, Nickel.
 
