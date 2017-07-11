@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Chain","The chain of middlewares."]],"trait":[["Middleware","This traits represents a `Middleware`"]]});
